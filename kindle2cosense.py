@@ -34,7 +34,33 @@ def convert_kindle_to_cosense(input_path, output_dir):
         # 著者リンク処理
         authors = book.get('authors', '不明')
         author_links = [f"[{a.strip()}]" for a in authors.split(',')] if authors else ["[不明]"]
-        
+
+        # グルーピングリンク追加処理
+        def extract_groups(title):
+            import re
+            groups = []
+            # 括弧内の出版社名やシリーズ名を抽出
+            paren_groups = re.findall(r'\(([^)]+)\)', title)
+            groups.extend(paren_groups)
+            # 括弧を除いたタイトル部分
+            title_no_paren = re.sub(r'\s*\([^)]*\)', '', title)
+            # 巻数や号数のパターンを除去して主要タイトルを抽出
+            main_title = re.sub(r'[\s　]*[（(]?\d+[巻巻]?[）)]?$', '', title_no_paren).strip()
+            if main_title:
+                groups.insert(0, main_title)
+            # 巻数や号数だけのグループは除外する
+            groups = [g for g in groups if not re.fullmatch(r'\d+', g)]
+            return groups
+
+        group_names = extract_groups(book['title'])
+        if group_names:
+            # タイトルと同じリンクは除外する
+            filtered_groups = [g for g in group_names if g != book['title']]
+            group_links = [f"[{g}]" for g in filtered_groups] if filtered_groups else []
+        else:
+            # シリーズ名が抽出できなかった場合はリンクを追加しない（タイトル全体のリンクは追加しない）
+            group_links = []
+
         # ページデータ作成
         page = {
             "id": str(uuid.uuid4()),
@@ -49,6 +75,7 @@ def convert_kindle_to_cosense(input_path, output_dir):
                 f"[{book.get('readStatus', 'UNKNOWN')}]",
                 f"[reader https://read.amazon.co.jp/manga/{book.get('asin', '')}]",
                 f"[amazon https://www.amazon.co.jp/dp/{book.get('asin', '')}]",
+                *group_links,
                 *([f"[{book['productImage']}]"] if 'productImage' in book else [])
             ]
         }
