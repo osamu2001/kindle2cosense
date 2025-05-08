@@ -31,6 +31,10 @@ def convert_kindle_to_cosense(input_path, output_dir):
         acquired_dt = datetime.fromtimestamp(acquired_time_sec) if book.get('acquiredTime') else datetime.now()
         jp_time_str = acquired_dt.strftime('%Y年%m月%d日 %H:%M')
         
+        # 著者リンク処理
+        authors = book.get('authors', '不明')
+        author_links = [f"[{a.strip()}]" for a in authors.split(',')] if authors else ["[不明]"]
+        
         # ページデータ作成
         page = {
             "id": str(uuid.uuid4()),
@@ -40,11 +44,12 @@ def convert_kindle_to_cosense(input_path, output_dir):
             "views": 15,
             "lines": [
                 book.get('title', '無題'),
-                f"著者: {book.get('authors', '不明')}",
+                *author_links,
                 f"購入日: {jp_time_str}" if 'acquiredTime' in book else "購入日: 不明",
-                f"読了状態: {book.get('readStatus', 'UNKNOWN')}",
-                f"ASIN: {book.get('asin', '不明')}",
-                *([book['productImage']] if 'productImage' in book else [])
+                f"[{book.get('readStatus', 'UNKNOWN')}]",
+                f"[reader https://read.amazon.co.jp/manga/{book.get('asin', '')}]",
+                f"[amazon https://www.amazon.co.jp/dp/{book.get('asin', '')}]",
+                *([f"[{book['productImage']}]"] if 'productImage' in book else [])
             ]
         }
         
