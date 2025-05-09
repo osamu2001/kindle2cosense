@@ -58,7 +58,7 @@ def convert_kindle_to_cosense(input_path, output_dir):
             vol_pattern_for_split = r'\s+' + _vol_indicator_inner_pattern
             
             # Part 1: Extract from parentheses (likely labels/publishers or sub-series)
-            paren_content_list = re.findall(r'\(([^)]+)\)', original_title)
+            paren_content_list = re.findall(r'[（\(]([^）)]+)[）\)]', original_title)
             
             # Note: The original specific vol_indicator_regex definition that was previously here
             # has been effectively moved and generalized by the definitions above.
@@ -74,7 +74,7 @@ def convert_kindle_to_cosense(input_path, output_dir):
 
                     # Step 1: If p_content_stripped is like "Name (Vol)", extract "Name".
                     # Example: "ギャラリーフェイク (39)" -> "ギャラリーフェイク"
-                    series_match_in_paren = re.match(r'^(.*?)\s*\(([^)]+)\)$', current_name_candidate)
+                    series_match_in_paren = re.match(r'^(.*?)\s*[（\(]([^）)]+)[）\)]$', current_name_candidate)
                     if series_match_in_paren:
                         base_part = series_match_in_paren.group(1).strip()
                         paren_part_content = series_match_in_paren.group(2).strip()
@@ -108,7 +108,7 @@ def convert_kindle_to_cosense(input_path, output_dir):
 
             # Part 2: Extract main series title
             # Remove ALL parenthesized content to get a base for the main title.
-            title_without_any_parens = re.sub(r'\s*\([^)]*\)', '', original_title).strip()
+            title_without_any_parens = re.sub(r'\s*[（\(][^）)]*[）\)]', '', original_title).strip()
             
             main_title_final = ""
             if title_without_any_parens:
