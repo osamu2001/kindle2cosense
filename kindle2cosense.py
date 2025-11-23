@@ -123,25 +123,41 @@ def convert_kindle_to_cosense(input_path, output_dir):
         jp_time_str = acquired_dt.strftime('%Y年%m月%d日 %H:%M')
         
         year_link = None
+        purchase_lines = []
         if book.get('acquiredTime'):
             year_str = acquired_dt.strftime('%Y')
             year_link = f"[{year_str}年]"
             acquired_years.add(year_str)
+            purchase_lines = [
+                "[* 購入]",
+                f" {jp_time_str}",
+                f" {year_link}",
+                ""
+            ]
+        else:
+            purchase_lines = [
+                "[* 購入]",
+                " 不明",
+                ""
+            ]
 
         # 著者リンク処理
         authors = book.get('authors', '不明')
-        author_links = [f"[{a.strip()}]" for a in authors.split(',')] if authors else ["[不明]"]
+        if authors:
+            author_list = [a.strip() for a in authors.split(',')]
+            author_lines = ["[* 著者]"] + [f" [{a}]" for a in author_list] + [""]
+        else:
+            author_lines = ["[* 著者]", " [不明]", ""]
 
         # グルーピングリンク追加処理
         group_names = title_parser.extract_groups(book['title'])
+        group_lines = []
         if group_names:
             # タイトルと同じリンクは除外する
             filtered_groups = [g for g in group_names if g != book['title']]
-            group_links = [f"[{g}]" for g in filtered_groups] if filtered_groups else []
-        else:
-            # シリーズ名が抽出できなかった場合はリンクを追加しない（タイトル全体のリンクは追加しない）
-            group_links = []
-
+            if filtered_groups:
+                group_lines = ["[* シリーズ]"] + [f" [{g}]" for g in filtered_groups] + [""]
+        
         # ページデータ作成
         asin = book.get('asin', '')
         amazon_url = f"https://www.amazon.co.jp/dp/{asin}"
@@ -160,12 +176,13 @@ def convert_kindle_to_cosense(input_path, output_dir):
             "views": 15,
             "lines": [
                 book.get('title', '無題'),
-                *author_links,
-                f"購入日: {jp_time_str}" if 'acquiredTime' in book else "購入日: 不明",
-                *([year_link] if year_link else []),
-                f"[reader https://read.amazon.co.jp?asin={asin}]",
+                *author_lines,
+                *purchase_lines,
+                *group_lines,
+                "[* 読む]",
+                f" [クラウド https://read.amazon.co.jp?asin={asin}]",
                 amazon_link,
-                *group_links,
+                "",
             ]
         }
         
@@ -193,6 +210,7 @@ def convert_kindle_to_cosense(input_path, output_dir):
     output_path = os.path.join(output_dir, 'cosense.json')
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(cosense_data, f, ensure_ascii=False, indent=2)
+        f.write('\n')
     
     return output_path
 
