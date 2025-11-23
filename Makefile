@@ -12,3 +12,7 @@ build/cosense.json: input/kindle.json | build
 # Clean up build artifacts
 clean:
 	rm -f build/cosense.json
+
+# Run tests
+test:
+	python3 test_title_parser.py
