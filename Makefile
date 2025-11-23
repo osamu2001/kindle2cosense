@@ -7,7 +7,7 @@ build:
 
 # Run the python script to generate cosense.json
 build/cosense.json: input/kindle.json | build
-	python kindle2cosense.py
+	python3 kindle2cosense.py
 
 # Clean up build artifacts
 clean:
